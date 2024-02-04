@@ -11,12 +11,19 @@
 	}
 
 	let { option } = $props<{ option: TimerOptionDetail }>();
-	let start = performance.now();
-	let now = $state(performance.now());
+	let start = Date.now();
+	console.log("started at", start);
+	let now = $state(Date.now());
 	let duration_passed = $derived(((now - start) * seek_speed) / (1000 * 60));
+
 	let duration_remaining = $derived(
 		Math.max(0, option.duration - duration_passed),
 	);
+	let duration_surpassed = $derived(
+		Math.max(0, duration_passed - option.duration),
+	);
+	let seconds_surpassed = $derived(Math.floor(duration_surpassed * 60) % 60);
+	let minutes_surpassed = $derived(Math.floor(duration_surpassed));
 	let seconds_remaining = $derived(Math.floor(duration_remaining * 60) % 60);
 	let minutes_remaining = $derived(Math.floor(duration_remaining));
 	let percentage_completed = $derived(
@@ -35,7 +42,7 @@
 			src: ["/notification.mp3"],
 		});
 		interval = setInterval(() => {
-			now = performance.now();
+			now = Date.now();
 		}, 100);
 	});
 	onDestroy(() => {
@@ -53,9 +60,19 @@
 			{option.tagline}
 		</div>
 		<div class="text-2xl">
-			{minutes_remaining.toString().padStart(2, "0")}:{seconds_remaining
-				.toString()
-				.padStart(2, "0")}
+			{#if is_completed}
+				+{minutes_surpassed
+					.toString()
+					.padStart(2, "0")}:{seconds_surpassed
+					.toString()
+					.padStart(2, "0")}
+			{:else}
+				{minutes_remaining
+					.toString()
+					.padStart(2, "0")}:{seconds_remaining
+					.toString()
+					.padStart(2, "0")}
+			{/if}
 		</div>
 	</div>
 </div>
