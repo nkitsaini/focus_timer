@@ -1,9 +1,11 @@
 <script lang="ts">
+	import { page } from "$app/stores";
 	import type { TimerOptionDetail } from "$lib";
 	import TimerOption from "./TimerOption.svelte";
 	import { dev } from "$app/environment";
 	import HourGlass from "./HourGlass.svelte";
-	const OPTIONS: TimerOptionDetail[] = [
+	import { onMount } from "svelte";
+	const OPTIONS: TimerOptionDetail[] = $state([
 		{
 			duration: 25,
 			keyword: "mouse",
@@ -24,9 +26,15 @@
 			keyword: "turtle",
 			tagline: "long and steady",
 		},
-	];
+	]);
 	// let selectedOption: TimerOptionDetail | null = $state(OPTIONS[1]);
 	let selectedOption: TimerOptionDetail | null = $state(null);
+	onMount(() => {
+		// @ts-ignore
+		window.set_dev = () => {
+			OPTIONS[1].duration = 1;
+		};
+	});
 </script>
 
 {#if selectedOption === null}
