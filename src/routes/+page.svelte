@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/stores";
 	import type { TimerOptionDetail } from "$lib";
-	import {goto, pushState} from '$app/navigation'
+	import { goto, pushState } from "$app/navigation";
 	import TimerOption from "./TimerOption.svelte";
 	import { dev } from "$app/environment";
 	import HourGlass from "./HourGlass.svelte";
@@ -48,13 +48,10 @@
 		<TimerOption
 			options={OPTIONS}
 			defaultOption={1}
-			onselect={
-			(e) => (
-				pushState('', {
-					timerDetail: JSON.stringify(e)
-				})
-			)
-			}
+			onselect={(e) =>
+				pushState("", {
+					timerDetail: JSON.stringify(e),
+				})}
 		/>
 	</div>
 {:else}

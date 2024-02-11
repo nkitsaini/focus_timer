@@ -51,9 +51,15 @@
 	let faviconSVGContent = $derived(`
 			<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
 			  <rect width="50" height="100" x="25" y="0" fill="#fdba74" rx="10" ry="10" />
-			  <rect width="50" height="${Math.max(0, 100- timer.state.percentCompleted)}" x="25" y="${Math.min(100, timer.state.percentCompleted)}" fill="#ea580c" rx="10" ry="10" />
+			  <rect width="50" height="${Math.max(
+					0,
+					100 - timer.state.percentCompleted,
+				)}" x="25" y="${Math.min(
+					100,
+					timer.state.percentCompleted,
+				)}" fill="#ea580c" rx="10" ry="10" />
 			</svg>
-	`)
+	`);
 	onMount(async () => {
 		finishSound = new Howl({
 			src: ["/notification.mp3"],
@@ -70,18 +76,27 @@
 		let url = domURL.createObjectURL(svg);
 		let img = new Image();
 		img.onload = function () {
-			let ctx = faviconCanvasElement!.getContext('2d')!;
-			ctx.clearRect(0, 0, faviconCanvasElement!.width, faviconCanvasElement!.height);
+			let ctx = faviconCanvasElement!.getContext("2d")!;
+			ctx.clearRect(
+				0,
+				0,
+				faviconCanvasElement!.width,
+				faviconCanvasElement!.height,
+			);
 			ctx.drawImage(img, 0, 0);
 			domURL.revokeObjectURL(url);
 			canvasURL = faviconCanvasElement!.toDataURL("image/png");
 		};
 		img.src = url;
 	}
-	let updateFaviconDebounced = R.debounce(updateFavicon, {timing: 'trailing', waitMs: 100, maxWaitMs: dev?200:10000})
+	let updateFaviconDebounced = R.debounce(updateFavicon, {
+		timing: "trailing",
+		waitMs: 100,
+		maxWaitMs: dev ? 200 : 60 * 1000,
+	});
 	$effect(() => {
-		updateFaviconDebounced.call(faviconSVGContent)
-	})
+		updateFaviconDebounced.call(faviconSVGContent);
+	});
 </script>
 
 <svelte:head>
@@ -136,7 +151,13 @@
 </div>
 
 <!-- Used to render dynamic favicon -->
-<canvas class="hidden" bind:this={faviconCanvasElement} height=100 width=100 id="my_canvas" />
+<canvas
+	class="hidden"
+	bind:this={faviconCanvasElement}
+	height="100"
+	width="100"
+	id="my_canvas"
+/>
 
 <style>
 	.glass {
