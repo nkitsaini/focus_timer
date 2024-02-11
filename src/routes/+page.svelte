@@ -37,6 +37,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>Timer</title>
+</svelte:head>
+
 {#if selectedOption === null}
 	<h1 class="text-4xl text-center text-gray-600">Start the timer</h1>
 	<div class="m-auto mt-10">

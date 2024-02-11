@@ -29,6 +29,6 @@
   "type": "module",
   "dependencies": {
     "howler": "^2.2.4",
-    "remeda": "^1.40.0"
+    "remeda": "^1.40.1"
   }
 }
