@@ -107,14 +107,6 @@
 	});
 </script>
 
-<!-- <svelte:head> -->
-	<!-- {#if canvasURL !== null} -->
-		<!-- <link rel="icon" href={canvasURL} sizes="any" type="image/png" /> -->
-	<!-- {/if} -->
-	<!-- <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml" /> -->
-	<!-- <title>Timer ({dev ? timerString : timerString.slice(0, -3) + " m"})</title> -->
-<!-- </svelte:head> -->
-
 <div class="flex flex-col items-center w-content">
 	<div
 		class=" glass rounded border w-64 h-96 font-mono text-orange-950 flex flex-col justify-center items-center"
