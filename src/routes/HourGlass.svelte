@@ -7,9 +7,7 @@
 	import * as R from "remeda";
 	import { TimerClock, splitTimestamp } from "$lib/timer_clock.svelte";
 	let finishSound: Howl;
-	let faviconSVGElement: SVGElement;
-	let faviconCanvasElement: HTMLCanvasElement;
-	let  faviconImageElement: HTMLImageElement;
+	let faviconCanvasElement: HTMLCanvasElement | null = $state(null);
 	let seek_speed = 20;
 	if (!dev) {
 		seek_speed = 1;
@@ -73,11 +71,11 @@
 		let url = domURL.createObjectURL(svg);
 		let img = new Image();
 		img.onload = function () {
-			let ctx = faviconCanvasElement.getContext('2d')!;
-			ctx.clearRect(0, 0, faviconCanvasElement.width, faviconCanvasElement.height);
+			let ctx = faviconCanvasElement!.getContext('2d')!;
+			ctx.clearRect(0, 0, faviconCanvasElement!.width, faviconCanvasElement!.height);
 			ctx.drawImage(img, 0, 0);
 			domURL.revokeObjectURL(url);
-			canvasURL = faviconCanvasElement.toDataURL("image/png");
+			canvasURL = faviconCanvasElement!.toDataURL("image/png");
 		};
 		img.src = url;
 	}
