@@ -29,6 +29,18 @@
 		},
 	]);
 
+	let titleString = $state("Timer");
+	let defaultLinkDetail = {
+		url: "/favicon.svg",
+		type: "image/svg+xml",
+	};
+	let linkDetail = $state(defaultLinkDetail);
+	$effect(() => {
+		if ($page.state.timerDetail === undefined) {
+			titleString = "Timer";
+			linkDetail = defaultLinkDetail;
+		}
+	});
 	let selectedOption: TimerOptionDetail | null = $state(null);
 	onMount(() => {
 		// @ts-ignore
@@ -39,7 +51,8 @@
 </script>
 
 <svelte:head>
-	<title>Timer</title>
+	<link rel="icon" href={linkDetail.url} type={linkDetail.type} size="any" />
+	<title>{titleString}</title>
 </svelte:head>
 
 {#if $page.state.timerDetail === undefined}
@@ -55,5 +68,11 @@
 		/>
 	</div>
 {:else}
-	<HourGlass option={JSON.parse($page.state.timerDetail)} />
+	<HourGlass
+		option={JSON.parse($page.state.timerDetail)}
+		updateTitle={(x) => (titleString = x)}
+		updateFavicon={(url, type) => {
+			linkDetail = { url, type };
+		}}
+	/>
 {/if}

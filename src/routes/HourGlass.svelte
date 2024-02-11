@@ -13,7 +13,7 @@
 		seek_speed = 1;
 	}
 
-	let { option } = $props<{ option: TimerOptionDetail }>();
+	let { option, updateTitle, updateFavicon } = $props<{ option: TimerOptionDetail, updateTitle: (title: string) => {}, updateFavicon: (url: string, type?: string) => void }>();
 	let timer = new TimerClock((option.duration * 60 * 1000) / seek_speed);
 
 	let { seconds: seconds_surpassed, minutes: minutes_surpassed } = $derived(
@@ -70,7 +70,7 @@
 		};
 	});
 
-	async function updateFavicon(svgContent: string) {
+	async function updateFaviconURL(svgContent: string) {
 		let svg = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
 		let domURL = self.URL || self.webkitURL || self;
 		let url = domURL.createObjectURL(svg);
@@ -89,23 +89,31 @@
 		};
 		img.src = url;
 	}
-	let updateFaviconDebounced = R.debounce(updateFavicon, {
+	let updateFaviconURLDebounced = R.debounce(updateFaviconURL, {
 		timing: "trailing",
 		waitMs: 100,
 		maxWaitMs: dev ? 200 : 60 * 1000,
 	});
 	$effect(() => {
-		updateFaviconDebounced.call(faviconSVGContent);
+		updateTitle(`Timer ${dev ? timerString : timerString.slice(0, -3) + " m"}`)
+	})
+	$effect(() => {
+		if (canvasURL) {
+			updateFavicon(canvasURL, 'image/png')
+		}
+	})
+	$effect(() => {
+		updateFaviconURLDebounced.call(faviconSVGContent);
 	});
 </script>
 
-<svelte:head>
-	{#if canvasURL !== null}
-		<link rel="icon" href={canvasURL} sizes="any" type="image/png" />
-	{/if}
-	<link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml" />
-	<title>Timer ({dev ? timerString : timerString.slice(0, -3) + " m"})</title>
-</svelte:head>
+<!-- <svelte:head> -->
+	<!-- {#if canvasURL !== null} -->
+		<!-- <link rel="icon" href={canvasURL} sizes="any" type="image/png" /> -->
+	<!-- {/if} -->
+	<!-- <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml" /> -->
+	<!-- <title>Timer ({dev ? timerString : timerString.slice(0, -3) + " m"})</title> -->
+<!-- </svelte:head> -->
 
 <div class="flex flex-col items-center w-content">
 	<div
