@@ -95,7 +95,7 @@
 		maxWaitMs: dev ? 200 : 60 * 1000,
 	});
 	$effect(() => {
-		updateTitle(`Timer ${dev ? timerString : timerString.slice(0, -3) + " m"}`)
+		updateTitle(`Timer - ${dev ? timerString : timerString.slice(0, -3) + " m"}`)
 	})
 	$effect(() => {
 		if (canvasURL) {
