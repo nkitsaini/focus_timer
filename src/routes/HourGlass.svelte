@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { dev } from "$app/environment";
 	import type { TimerOptionDetail } from "$lib";
-	import { onDestroy, onMount } from "svelte";
+	import { onMount } from "svelte";
 	import { Howl } from "howler";
 	import * as ICONS from "radix-icons-svelte";
 	import * as R from "remeda";
