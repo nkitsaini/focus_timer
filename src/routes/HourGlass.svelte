@@ -54,7 +54,7 @@
 	let faviconSVGContent = $derived(`
 			<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
 			  <rect width="50" height="100" x="25" y="0" fill="#fdba74" rx="10" ry="10" />
-			  <rect width="50" height="${Math.max(0, 100- timer.state.percentCompleted)}" x="25" y="${Math.min(100, timer.state.percentCompleted)}" fill="#eaf80c" rx="10" ry="10" />
+			  <rect width="50" height="${Math.max(0, 100- timer.state.percentCompleted)}" x="25" y="${Math.min(100, timer.state.percentCompleted)}" fill="#ea580c" rx="10" ry="10" />
 			</svg>
 	`)
 	onMount(async () => {
@@ -65,81 +65,30 @@
 		window.get_state = () => {
 			console.log(timer.state);
 		};
-		async function drawInlineSVG(
-			ctx: CanvasRenderingContext2D,
-			rawSVG: string,
-		) {
-			var svg = new Blob([rawSVG], { type: "image/svg+xml;charset=utf-8" }),
-				domURL = self.URL || self.webkitURL || self,
-				url = domURL.createObjectURL(svg),
-				img = new Image();
-
-			let promise = new Promise((r) => {
-				img.onload = function () {
-					ctx.drawImage(img, 0, 0);
-					domURL.revokeObjectURL(url);
-					r(null);
-				};
-			});
-			img.src = url;
-			await promise;
-		}
-		//const canvas = document.getElementById("my_canvas") as HTMLCanvasElement;
-		// canvas.height = 100;
-		// canvas.width = 100;
-		// const ctx = canvas.getContext("2d")!;
-		// ctx.drawImage(faviconSVGElement, 0, 0);
-
-		// await drawInlineSVG(
-		// 	ctx,
-		// 	`
-		// <svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
-		//   <rect width="50" height="100" x="25" y="0" fill="#fdba74" rx="10" ry="10" />
-		//   <rect width="50" height="50" x="25" y="50" fill="#eaf80c" rx="10" ry="10" />
-		// </svg>
-		// `,
-		// );
-		// canvasURL = canvas.toDataURL("image/x-icon");
-		// console.log("URL", canvas.toDataURL("image/x-icon"));
 	});
 
 	async function updateFavicon(svgContent: string) {
-		console.log("in update favicon")
 		let svg = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
 		let domURL = self.URL || self.webkitURL || self;
 		let url = domURL.createObjectURL(svg);
 		let img = new Image();
 		img.onload = function () {
-		console.log("image onload triggered")
 			let ctx = faviconCanvasElement.getContext('2d')!;
 			ctx.clearRect(0, 0, faviconCanvasElement.width, faviconCanvasElement.height);
 			ctx.drawImage(img, 0, 0);
 			domURL.revokeObjectURL(url);
 			canvasURL = faviconCanvasElement.toDataURL("image/png");
 		};
-		console.log("blob url", url)
 		img.src = url;
-		document.getElementById('image-div')!.appendChild(img)
-		console.log("image waiting onload")
 	}
-	let updateFaviconDebounced = R.debounce(updateFavicon, {timing: 'trailing', waitMs: 1000, maxWaitMs: dev?1000:10000})
+	let updateFaviconDebounced = R.debounce(updateFavicon, {timing: 'trailing', waitMs: 100, maxWaitMs: dev?200:10000})
 	$effect(() => {
-	console.log("Calling update")
 		updateFaviconDebounced.call(faviconSVGContent)
 	})
-	$effect(() => {
-		console.log("canvasurl => ", canvasURL);
-	});
 	onDestroy(() => {
 		clearInterval(interval);
 	});
 	$inspect(canvasURL)
-	//$effect(() => {
-	//	faviconSVGUrl;
-	//	console.log("== rendering svg")
-	//	const ctx = faviconCanvasElement.getContext("2d")!;
-	//	ctx.drawImage(faviconImageElement, 0, 0);
-	//})
 </script>
 
 <svelte:head>
@@ -149,37 +98,6 @@
 	<link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml" />
 	<title>Timer ({dev ? timerString : timerString.slice(0, -3)})</title>
 </svelte:head>
-
-{faviconSVGContent}
-<div id="image-div" class="p-2 border border-red-800"> </div>
-<img src={canvasURL} alt="final" />
-<!-- <img height=100 width=100 bind:this={faviconImageElement} src={faviconSVGUrl} alt="hidden-favicon" onchange={(e) => { -->
-	<!-- console.log("on load called") -->
-		<!-- const ctx = faviconCanvasElement.getContext("2d")!; -->
-		<!-- ctx.drawImage(e.currentTarget as HTMLImageElement, 0, 0); -->
-<!-- }}/> -->
-
-<div class="border border-red-700 p-2 w-max h-max">
-	<canvas bind:this={faviconCanvasElement} height=100 width=100 id="my_canvas" />
-</div>
-
-<svg
-	bind:this={faviconSVGElement}
-	width="100"
-	height="100"
-	xmlns="http://www.w3.org/2000/svg"
->
-	<rect width="50" height="100" x="25" y="0" fill="#fdba74" rx="10" ry="10" />
-	<rect
-		width="50"
-		height={Math.max(0, 100 - timer.state.percentCompleted)}
-		x="25"
-		y={Math.min(100, timer.state.percentCompleted)}
-		fill="#eaf80c"
-		rx="10"
-		ry="10"
-	/>
-</svg>
 
 <div class="flex flex-col items-center w-content">
 	<div
@@ -223,6 +141,9 @@
 		{/each}
 	</div>
 </div>
+
+<!-- Used to render dynamic favicon -->
+<canvas class="hidden" bind:this={faviconCanvasElement} height=100 width=100 id="my_canvas" />
 
 <style>
 	.glass {

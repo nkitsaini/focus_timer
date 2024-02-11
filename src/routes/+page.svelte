@@ -27,7 +27,7 @@
 			tagline: "long and steady",
 		},
 	]);
-	// let selectedOption: TimerOptionDetail | null = $state(OPTIONS[1]);
+
 	let selectedOption: TimerOptionDetail | null = $state(null);
 	onMount(() => {
 		// @ts-ignore
