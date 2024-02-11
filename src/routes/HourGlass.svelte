@@ -47,7 +47,6 @@
 		return date.toLocaleString();
 	}
 
-	let interval: number;
 	let canvasURL: string | null = $state(null);
 	let faviconSVGContent = $derived(`
 			<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
@@ -83,10 +82,6 @@
 	$effect(() => {
 		updateFaviconDebounced.call(faviconSVGContent)
 	})
-	onDestroy(() => {
-		clearInterval(interval);
-	});
-	$inspect(canvasURL)
 </script>
 
 <svelte:head>
@@ -94,7 +89,7 @@
 		<link rel="icon" href={canvasURL} sizes="any" type="image/png" />
 	{/if}
 	<link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml" />
-	<title>Timer ({dev ? timerString : timerString.slice(0, -3)})</title>
+	<title>Timer ({dev ? timerString : timerString.slice(0, -3) + " m"})</title>
 </svelte:head>
 
 <div class="flex flex-col items-center w-content">
