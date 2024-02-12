@@ -2,8 +2,13 @@
 	import { page } from "$app/stores";
 	import type { TimerOptionDetail } from "$lib";
 	import { goto, pushState } from "$app/navigation";
+	import * as R from 'remeda'
 	import TimerOption from "./TimerOption.svelte";
+	import { parseEvents } from "$lib/timer_clock.svelte";
+	import { humanizeTimestamp } from "$lib/time_util";
 	import { dev } from "$app/environment";
+	import { liveQuery } from "dexie";
+	import { db, type TimerSessionRow } from "$lib/db";
 	import HourGlass from "./HourGlass.svelte";
 	import { onMount } from "svelte";
 	const OPTIONS: TimerOptionDetail[] = $state([
@@ -41,6 +46,15 @@
 			linkDetail = defaultLinkDetail;
 		}
 	});
+
+	let _timerSessions = liveQuery(() => {
+		return db.sessions.toArray();
+	});
+
+	let timerSessions = $derived(
+		R.sortBy(($_timerSessions || []).map((x) => parseEvents(x.last_tick, x.events)), x => x.startAt).reverse(),
+	);
+
 	let selectedOption: TimerOptionDetail | null = $state(null);
 	onMount(() => {
 		// @ts-ignore
@@ -66,6 +80,16 @@
 					timerDetail: JSON.stringify(e),
 				})}
 		/>
+	</div>
+	<div class="m-auto w-max mt-2">
+		<div class="text-center text-lg ">Recent Sessions: </div>
+		{#each timerSessions as session}
+			<p class="mt-2">
+				{humanizeTimestamp(session.startAt)} - {Math.floor(
+					session.totalEffectiveDuration / (60 * 1000),
+				)} minutes
+			</p>
+		{/each}
 	</div>
 {:else}
 	<HourGlass

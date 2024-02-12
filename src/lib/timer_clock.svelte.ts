@@ -5,27 +5,39 @@ import * as R from 'remeda'
 function get_now(): number {
 	return Date.now()
 }
+class LiveTime {
+	now = $state(get_now())
+	constructor(){
+		setInterval(() => this.now = get_now(), 50)
+	}
+}
 
-let CURRENT_TIME = $state(get_now())
+export const CURRENT_TIME = new LiveTime();
 
-setInterval(() => CURRENT_TIME = get_now(), 50)
-
-
-type TimelineEvent = {
-	kind: 'started',
-	timestamp: number
-} | {
+type PauseEvent = {
 	kind: 'paused',
 	timestamp: number
-} | {
+}
+export type UserEvent = {
+	kind: 'started',
+	timestamp: number,
+	timerDuration: number,
+} | PauseEvent | {
 	kind: 'resumed',
 	timestamp: number,
 	pauseDuration: number,
 } | {
+	kind: 'noteAdded',
+	timestamp: number,
+	message: string,
+}
+
+export type TimelineEvent = UserEvent | {
 	kind: 'finished',
 	timestamp: number,
-	totalPauseDuration: number,
+	totalPauseDuration: number
 }
+
 interface TimerClockState {
 	startAt: number,
 	timeline: TimelineEvent[]
@@ -42,30 +54,40 @@ interface TimerClockState {
 
 	isCompleted: boolean
 	isPaused: boolean,
-	timestamps: number[]
+	lastPausedEvent: null | PauseEvent
+	userEvents: UserEvent[]
 }
 
-function parseTimestamps(now: number, timestamps: number[], timerDuration: number): TimerClockState {
-	assert(timestamps.length != 0)
+export function parseEvents(now: number, userEvents: UserEvent[]): TimerClockState {
+	assert(userEvents.length != 0)
+	assert(userEvents[0].kind === "started")
 	// console.log(now, timestamps.slice(-1)[0])
-	assert(now >= timestamps.slice(-1)[0])
+	assert(now >= R.last(userEvents)!.timestamp)
 
-	let isPaused = timestamps.length % 2 == 0
+	let isPaused = R.last(userEvents)!.kind === 'paused';
 	let pauseDuration = 0;
 	let totalPassedDuration = 0;
-	let events: TimelineEvent[] = []
+	let lastPausedEvent = null;
+	let timerDuration = userEvents[0].timerDuration
+	let timelineEvents: TimelineEvent[] = []
 	let isCompleted = false;
-	for (const [idx, ts] of timestamps.entries()) {
-		if (idx === 0) {
-			events.push({ kind: 'started', timestamp: ts })
-		} else if (idx % 2 != 0) {
-			let elapsedTime = ts - timestamps[idx - 1]
-			events.push({ kind: 'paused', timestamp: ts })
+	for (const [idx, event] of userEvents.entries()) {
+		if (event.kind === "started") {
+			timelineEvents.push(event)
+		} else if (event.kind === "paused") {
+			let elapsedTime = event.timestamp - userEvents[idx - 1].timestamp
+			timelineEvents.push(event)
 			totalPassedDuration += elapsedTime
-		} else if (idx % 2 == 0) {
-			let elapsedTime = ts - timestamps[idx - 1]
-			events.push({ kind: 'resumed', timestamp: ts, pauseDuration: elapsedTime })
-			pauseDuration += elapsedTime
+			lastPausedEvent = event
+		} else if (event.kind === 'resumed') {
+			assert(lastPausedEvent !== null)
+			let elapsedTime = event.timestamp - userEvents[idx - 1].timestamp
+			timelineEvents.push(event)
+			pauseDuration += event.timestamp - lastPausedEvent.timestamp;
+			totalPassedDuration += elapsedTime
+		} else if (event.kind === 'noteAdded') {
+			let elapsedTime = event.timestamp - userEvents[idx - 1].timestamp
+			timelineEvents.push(event)
 			totalPassedDuration += elapsedTime
 		} else {
 			throw new Error("unreachable")
@@ -73,11 +95,11 @@ function parseTimestamps(now: number, timestamps: number[], timerDuration: numbe
 		if (!isCompleted && totalPassedDuration - pauseDuration >= timerDuration) {
 			isCompleted = true;
 			let diff = totalPassedDuration - pauseDuration - timerDuration;
-			events.push({ kind: 'finished', timestamp: ts - diff, totalPauseDuration: pauseDuration })
+			timelineEvents.push({ kind: 'finished', timestamp: event.timestamp - diff, totalPauseDuration: pauseDuration })
 		}
 	}
-	if (now > timestamps.slice(-1)[0]) {
-		let elapsed = now - timestamps.slice(-1)[0]
+	if (now > R.last(userEvents)!.timestamp) {
+		let elapsed = now - R.last(userEvents)!.timestamp
 		if (isPaused) {
 			pauseDuration += elapsed
 		}
@@ -85,15 +107,17 @@ function parseTimestamps(now: number, timestamps: number[], timerDuration: numbe
 		if (!isCompleted && totalPassedDuration - pauseDuration >= timerDuration) {
 			isCompleted = true;
 			let diff = totalPassedDuration - pauseDuration - timerDuration;
-			events.push({ kind: 'finished', timestamp: now - diff, totalPauseDuration: pauseDuration })
+			timelineEvents.push({ kind: 'finished', timestamp: now - diff, totalPauseDuration: pauseDuration })
 		}
 	}
-	events = R.sortBy(events, (e) => e.timestamp)
+	timelineEvents = R.sortBy(timelineEvents, (e) => e.timestamp)
 
 	let effectiveDuration = totalPassedDuration - pauseDuration;
+	assert(!isPaused || lastPausedEvent !== null)
 	return {
-		startAt: timestamps[0],
-		timeline: events,
+		userEvents: userEvents,
+		startAt: userEvents[0].timestamp,
+		timeline: timelineEvents,
 		isPaused,
 		isCompleted,
 		totalPauseDuration: pauseDuration,
@@ -102,8 +126,7 @@ function parseTimestamps(now: number, timestamps: number[], timerDuration: numbe
 		remainingDuration: isCompleted ? 0 : timerDuration - effectiveDuration,
 		surpassedDuration: isCompleted ? effectiveDuration - timerDuration : 0,
 		percentCompleted: (effectiveDuration * 100) / timerDuration,
-		timestamps
-
+		lastPausedEvent
 	}
 }
 
@@ -115,24 +138,44 @@ export function splitTimestamp(ts: number) {
 }
 
 export class TimerClock {
-	/** timestamps = [startTime, pauseTime, resumeTime, pauseTime, resumeTime, ...] */
-	timestamps: number[] = $state([CURRENT_TIME - 1000])
+	userEvents: UserEvent[] = $state([{kind: 'started', timestamp: CURRENT_TIME.now - 1000, timerDuration: 1000}])
 	timerDuration: number = $state(0)
-	state: TimerClockState = $derived(parseTimestamps(CURRENT_TIME, this.timestamps, this.timerDuration))
+	state: TimerClockState = $derived(parseEvents(CURRENT_TIME.now, this.userEvents))
 	constructor(timerDuration: number) {
 		this.timerDuration = timerDuration
-		this.timestamps = [CURRENT_TIME]
+		this.userEvents = [{
+			kind: "started",
+			timestamp: CURRENT_TIME.now,
+			timerDuration
+		}]
 	}
 
 	pause() {
 		if (!this.state.isPaused) {
-			this.timestamps.push(CURRENT_TIME)
+			this.userEvents.push({
+				kind: 'paused',
+				timestamp: CURRENT_TIME.now
+			})
 		}
 	}
 
 	resume() {
+		let now = CURRENT_TIME.now
 		if (this.state.isPaused) {
-			this.timestamps.push(CURRENT_TIME)
+			assert(this.state.lastPausedEvent)
+			this.userEvents.push({
+				kind: 'resumed',
+				timestamp: now,
+				pauseDuration: now - this.state.lastPausedEvent!.timestamp
+			})
 		}
+	}
+
+	add_note(message: string) {
+		this.userEvents.push({
+			kind: 'noteAdded',
+			timestamp: CURRENT_TIME.now,
+			message: message
+		})
 	}
 }

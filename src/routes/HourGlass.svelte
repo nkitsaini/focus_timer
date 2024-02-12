@@ -1,19 +1,32 @@
 <script lang="ts">
 	import { dev } from "$app/environment";
 	import type { TimerOptionDetail } from "$lib";
-	import { onMount } from "svelte";
+	import {humanizeTimestamp} from '$lib/time_util'
+	import { db } from "$lib/db";
+	import { shortcut } from "$lib/shortcut";
+	import { onMount, unstate } from "svelte";
 	import { Howl } from "howler";
 	import * as ICONS from "radix-icons-svelte";
 	import * as R from "remeda";
-	import { TimerClock, splitTimestamp } from "$lib/timer_clock.svelte";
+	import {
+		CURRENT_TIME,
+		TimerClock,
+		splitTimestamp,
+		type UserEvent,
+	} from "$lib/timer_clock.svelte";
 	let finishSound: Howl;
 	let faviconCanvasElement: HTMLCanvasElement | null = $state(null);
 	let seek_speed = 20;
+	let textareaMessage = $state("");
 	if (!dev) {
 		seek_speed = 1;
 	}
 
-	let { option, updateTitle, updateFavicon } = $props<{ option: TimerOptionDetail, updateTitle: (title: string) => {}, updateFavicon: (url: string, type?: string) => void }>();
+	let { option, updateTitle, updateFavicon } = $props<{
+		option: TimerOptionDetail;
+		updateTitle: (title: string) => {};
+		updateFavicon: (url: string, type?: string) => void;
+	}>();
 	let timer = new TimerClock((option.duration * 60 * 1000) / seek_speed);
 
 	let { seconds: seconds_surpassed, minutes: minutes_surpassed } = $derived(
@@ -41,11 +54,6 @@
 			finishSound.play();
 		}
 	});
-
-	function humanize(timestamp: number) {
-		let date = new Date(timestamp);
-		return date.toLocaleString();
-	}
 
 	let canvasURL: string | null = $state(null);
 	let faviconSVGContent = $derived(`
@@ -95,16 +103,55 @@
 		maxWaitMs: dev ? 200 : 60 * 1000,
 	});
 	$effect(() => {
-		updateTitle(`Timer (${dev ? timerString : timerString.slice(0, -3) + " m"})`)
-	})
+		let pauseString = "";
+		if (timer.state.isPaused) {
+			pauseString = "- Paused ";
+		}
+		updateTitle(
+			`Timer ${pauseString}(${
+				dev ? timerString : timerString.slice(0, -3) + " m"
+			})`,
+		);
+	});
+
+	let sessionId: null | number = null;
+	async function updateDb(now: number, events: UserEvent[]) {
+		if (sessionId === null) {
+			sessionId = await db.sessions.add({
+				events: events,
+				last_tick: now,
+			});
+		} else {
+			await db.sessions.update(sessionId, {
+				events,
+				last_tick: now,
+			});
+		}
+	}
+	let updateDbDebounced = R.debounce(updateDb, {
+		timing: "trailing",
+		waitMs: 100,
+		maxWaitMs: dev ? 200 : 1000,
+	});
+	$effect(() => {
+		updateDbDebounced.call(unstate(CURRENT_TIME.now), unstate(timer.userEvents))
+	});
+
 	$effect(() => {
 		if (canvasURL) {
-			updateFavicon(canvasURL, 'image/png')
+			updateFavicon(canvasURL, "image/png");
 		}
-	})
+	});
 	$effect(() => {
 		updateFaviconURLDebounced.call(faviconSVGContent);
 	});
+	function handleTextAreaKeyPress() {
+		let message = textareaMessage.trim();
+		if (message.length !== 0) {
+			timer.add_note(message);
+			textareaMessage = "";
+		}
+	}
 </script>
 
 <div class="flex flex-col items-center w-content">
@@ -127,11 +174,11 @@
 
 <div class="flex justify-center items-center mt-4">
 	{#if timer.state.isPaused}
-		<button class="border p-4 bg-orange-50" onclick={() => timer.resume()}
+		<button class="border p-4 bg-orange-100" onclick={() => timer.resume()}
 			><ICONS.Resume class="inline-block mr-2" size={16} />Resume</button
 		>
 	{:else}
-		<button class="border p-4 bg-orange-50" onclick={() => timer.pause()}
+		<button class="border p-4 bg-orange-100" onclick={() => timer.pause()}
 			><ICONS.Pause class="inline-block mr-2" size={16} />Pause</button
 		>
 	{/if}
@@ -139,13 +186,47 @@
 
 <br />
 
-<!-- TODO: fix overflow -->
 <div class="flex flex-col justify-center items-center mt-4 overflow-scroll">
-	<span class="text-orange-950 text-lg">Timeline: </span>
-	<div class="grid grid-cols-2 gap-2 text-orange-950">
+	<!-- Notes -->
+	<div class="flex flex-row items-center gap-2">
+		<textarea
+			class="border w-96 bg-orange-50"
+			placeholder="Type and Press `Ctrl+Enter` to Add Note"
+			bind:value={textareaMessage}
+			use:shortcut={{
+				control: true,
+				code: "Enter",
+				callback: handleTextAreaKeyPress,
+			}}
+		/>
+		<button
+			class="border px-4 py-2 bg-orange-100 w-max"
+			onclick={handleTextAreaKeyPress}
+		>
+			<ICONS.Pencil2 class="inline-block mr-2" size={16} />Add
+		</button>
+	</div>
+	<br />
+	<!-- Timeline -->
+	<span class="text-orange-950 text-lg mt-4">Timeline: </span>
+	<div class="flex flex-col w-96 gap-2">
 		{#each R.reverse(timer.state.timeline) as event}
-			<span class="capitalize">{event.kind}</span>
-			<span>{humanize(event.timestamp)}</span>
+			{#if event.kind === "noteAdded"}
+				<div class="w-full">
+					<div class="w-full flex justify-between">
+						<span class="capitalize">Note</span>
+						<span>{humanizeTimestamp(event.timestamp)}</span>
+					</div>
+					<p></p>
+					<pre class="text-orange-900">{event.message}</pre>
+				</div>
+			{:else}
+				<div class="w-full flex justify-between">
+					<span class="capitalize">{event.kind}</span>
+					<span>{humanizeTimestamp(event.timestamp)}</span>
+				</div>
+			{/if}
+			<hr />
 		{/each}
 	</div>
 </div>
