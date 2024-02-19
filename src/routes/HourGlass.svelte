@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { dev } from "$app/environment";
-	import type { TimerOptionDetail } from "$lib";
+	import type { TimerPreset } from "$lib/timer_presets";
 	import {humanizeTimestamp} from '$lib/time_util'
 	import { db } from "$lib/db";
 	import { shortcut } from "$lib/shortcut";
@@ -9,11 +9,12 @@
 	import * as ICONS from "radix-icons-svelte";
 	import * as R from "remeda";
 	import {
-		CURRENT_TIME,
 		TimerClock,
 		splitTimestamp,
 		type UserEvent,
+        type UserStartedEvent,
 	} from "$lib/timer_clock.svelte";
+    import { SpeedAdjustableClock } from "$lib/clock.svelte";
 	let finishSound: Howl;
 	let faviconCanvasElement: HTMLCanvasElement | null = $state(null);
 	let seek_speed = 20;
@@ -22,12 +23,14 @@
 		seek_speed = 1;
 	}
 
-	let { option, updateTitle, updateFavicon } = $props<{
-		option: TimerOptionDetail;
+	let { preset, updateTitle, updateFavicon } = $props<{
+		preset: TimerPreset;
 		updateTitle: (title: string) => {};
 		updateFavicon: (url: string, type?: string) => void;
 	}>();
-	let timer = new TimerClock((option.duration * 60 * 1000) / seek_speed);
+
+	let clock = new SpeedAdjustableClock(seek_speed);
+	let timer = new TimerClock(preset, clock);
 
 	let { seconds: seconds_surpassed, minutes: minutes_surpassed } = $derived(
 		splitTimestamp(timer.state.surpassedDuration),
@@ -117,12 +120,14 @@
 	let sessionId: null | number = null;
 	async function updateDb(now: number, events: UserEvent[]) {
 		if (sessionId === null) {
-			sessionId = await db.sessions.add({
+			sessionId = await db!.sessions.add({
+				startEvent: events[0] as UserStartedEvent,
 				events: events,
 				last_tick: now,
 			});
 		} else {
-			await db.sessions.update(sessionId, {
+			await db!.sessions.update(sessionId, {
+				startEvent: events[0] as UserStartedEvent,
 				events,
 				last_tick: now,
 			});
@@ -134,7 +139,7 @@
 		maxWaitMs: dev ? 200 : 1000,
 	});
 	$effect(() => {
-		updateDbDebounced.call(unstate(CURRENT_TIME.now), unstate(timer.userEvents))
+		updateDbDebounced.call(unstate(clock.now), unstate(timer.userEvents))
 	});
 
 	$effect(() => {
@@ -152,6 +157,11 @@
 			textareaMessage = "";
 		}
 	}
+	onMount(() => {
+			// To allow seek adjusting for testing
+			// @ts-ignore
+			window.timer_clock = clock
+  });
 </script>
 
 <div class="flex flex-col items-center w-content">
@@ -162,9 +172,9 @@
 			timer.state.percentCompleted,
 		)}%"
 	>
-		<div class="text-2xl capitalize text-orange-950">{option.keyword}</div>
+		<div class="text-2xl capitalize text-orange-950">{preset.keyword}</div>
 		<div class="capitalize text-orange-950 border-b border-orange-950">
-			{option.tagline}
+			{preset.tagline}
 		</div>
 		<div class="text-2xl">
 			{timerString}
@@ -186,7 +196,7 @@
 
 <br />
 
-<div class="flex flex-col justify-center items-center mt-4 overflow-scroll">
+<div class="flex flex-col justify-center items-center mt-4">
 	<!-- Notes -->
 	<div class="flex flex-row items-center gap-2">
 		<textarea

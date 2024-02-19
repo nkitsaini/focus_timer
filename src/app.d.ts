@@ -5,7 +5,10 @@ declare global {
 		// interface Error {}
 		// interface Locals {}
 		// interface PageData {}
-		// interface PageState {}
+		interface PageState {
+			// contains JSON.stringify(currently selected TIMER_PRESET)
+			timerPreset?: string
+		}
 		// interface Platform {}
 	}
 }

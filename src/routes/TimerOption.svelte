@@ -1,20 +1,20 @@
 <script lang="ts">
-	import { assert, type TimerOptionDetail } from "$lib";
+	import { type TimerPreset } from "$lib/timer_presets";
 
-	let { options, defaultOption, onselect } = $props<{
-		options: TimerOptionDetail[];
+	let { presets, defaultOption, onselect } = $props<{
+		presets: TimerPreset[];
 		defaultOption: number;
-		onselect: (option: TimerOptionDetail) => void;
+		onselect: (option: TimerPreset) => void;
 	}>();
 
 	let selectedIndex: number = $state(defaultOption);
-	let selectedOption = $derived(options[selectedIndex]);
+	let selectedOption = $derived(presets[selectedIndex]);
 	// let selected
 </script>
 
 <div class="flex w-full flex-col gap-4 items-center">
 	<div class="flex w-max gap-4 m-auto mt-10">
-		{#each options as option, idx}
+		{#each presets as option, idx}
 			<div
 				class="border p-4 inline-flex text-orange-950 items-center flex-col w-32 {idx ==
 				selectedIndex

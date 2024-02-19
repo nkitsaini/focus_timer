@@ -1,36 +1,29 @@
 import { assert } from "$lib"
 import * as R from 'remeda'
+import { SIMPLE_CLOCK, type Clock } from "./clock.svelte"
+import { _ALL_TIMER_PRESETS, getPreset, type TimerPreset } from "./timer_presets"
 
-/** Return UTC ms */
-function get_now(): number {
-	return Date.now()
-}
-class LiveTime {
-	now = $state(get_now())
-	constructor(){
-		setInterval(() => this.now = get_now(), 50)
-	}
-}
 
-export const CURRENT_TIME = new LiveTime();
-
-type PauseEvent = {
+export type UserPauseEvent = {
 	kind: 'paused',
 	timestamp: number
 }
-export type UserEvent = {
+export type UserResumeEvent = {
+	kind: 'resumed',
+	timestamp: number
+}
+export type UserStartedEvent = {
 	kind: 'started',
 	timestamp: number,
-	timerDuration: number,
-} | PauseEvent | {
-	kind: 'resumed',
-	timestamp: number,
-	pauseDuration: number,
-} | {
+	timerPreset: TimerPreset
+}
+export type UserNoteEvent = {
 	kind: 'noteAdded',
 	timestamp: number,
-	message: string,
+	message: string
 }
+
+export type UserEvent = UserNoteEvent | UserPauseEvent | UserResumeEvent | UserStartedEvent
 
 export type TimelineEvent = UserEvent | {
 	kind: 'finished',
@@ -54,21 +47,20 @@ interface TimerClockState {
 
 	isCompleted: boolean
 	isPaused: boolean,
-	lastPausedEvent: null | PauseEvent
+	lastPausedEvent: null | UserPauseEvent
 	userEvents: UserEvent[]
 }
 
 export function parseEvents(now: number, userEvents: UserEvent[]): TimerClockState {
 	assert(userEvents.length != 0)
 	assert(userEvents[0].kind === "started")
-	// console.log(now, timestamps.slice(-1)[0])
 	assert(now >= R.last(userEvents)!.timestamp)
 
 	let isPaused = R.last(userEvents)!.kind === 'paused';
 	let pauseDuration = 0;
 	let totalPassedDuration = 0;
 	let lastPausedEvent = null;
-	let timerDuration = userEvents[0].timerDuration
+	let timerDuration = userEvents[0].timerPreset.duration * 60 * 1000;
 	let timelineEvents: TimelineEvent[] = []
 	let isCompleted = false;
 	for (const [idx, event] of userEvents.entries()) {
@@ -138,15 +130,16 @@ export function splitTimestamp(ts: number) {
 }
 
 export class TimerClock {
-	userEvents: UserEvent[] = $state([{kind: 'started', timestamp: CURRENT_TIME.now - 1000, timerDuration: 1000}])
-	timerDuration: number = $state(0)
-	state: TimerClockState = $derived(parseEvents(CURRENT_TIME.now, this.userEvents))
-	constructor(timerDuration: number) {
-		this.timerDuration = timerDuration
+	clock: Clock = $state(SIMPLE_CLOCK)
+	userEvents: UserEvent[] = $state([{kind: 'started', timestamp: this.clock.now - 1000, timerPreset: getPreset('monkey-dev')}])
+	state: TimerClockState = $derived(parseEvents(this.clock.now, this.userEvents))
+	constructor(timerPreset:TimerPreset, clock?: Clock) {
+		clock = clock || SIMPLE_CLOCK
+    this.clock = clock
 		this.userEvents = [{
 			kind: "started",
-			timestamp: CURRENT_TIME.now,
-			timerDuration
+			timestamp: clock.startAt,
+			timerPreset: timerPreset
 		}]
 	}
 
@@ -154,19 +147,18 @@ export class TimerClock {
 		if (!this.state.isPaused) {
 			this.userEvents.push({
 				kind: 'paused',
-				timestamp: CURRENT_TIME.now
+				timestamp: this.clock.now
 			})
 		}
 	}
 
 	resume() {
-		let now = CURRENT_TIME.now
+		let now = this.clock.now
 		if (this.state.isPaused) {
 			assert(this.state.lastPausedEvent)
 			this.userEvents.push({
 				kind: 'resumed',
 				timestamp: now,
-				pauseDuration: now - this.state.lastPausedEvent!.timestamp
 			})
 		}
 	}
@@ -174,7 +166,7 @@ export class TimerClock {
 	add_note(message: string) {
 		this.userEvents.push({
 			kind: 'noteAdded',
-			timestamp: CURRENT_TIME.now,
+			timestamp: this.clock.now,
 			message: message
 		})
 	}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/stores";
-	import type { TimerOptionDetail } from "$lib";
-	import { goto, pushState } from "$app/navigation";
+	import  { type TimerPreset, TIMER_PRESETS } from "$lib/timer_presets";
+	import { pushState } from "$app/navigation";
 	import * as R from 'remeda'
 	import TimerOption from "./TimerOption.svelte";
 	import { parseEvents } from "$lib/timer_clock.svelte";
@@ -11,73 +11,51 @@
 	import { db, type TimerSessionRow } from "$lib/db";
 	import HourGlass from "./HourGlass.svelte";
 	import { onMount } from "svelte";
-	const OPTIONS: TimerOptionDetail[] = $state([
-		{
-			duration: 25,
-			keyword: "mouse",
-			tagline: "quick and sneaky",
-		},
-		{
-			duration: dev ? 1 : 55,
-			keyword: "monkey",
-			tagline: "tactful with a goal",
-		},
-		{
-			duration: 85,
-			keyword: "elephant",
-			tagline: "force of nature",
-		},
-		{
-			duration: 115,
-			keyword: "turtle",
-			tagline: "long and steady",
-		},
-	]);
 
 	let titleString = $state("Timer");
 	let defaultLinkDetail = {
 		url: "/favicon.svg",
 		type: "image/svg+xml",
 	};
-	let linkDetail = $state(defaultLinkDetail);
+	let linkDetail = $state<{url: string, type?: string}>(defaultLinkDetail);
 	$effect(() => {
-		if ($page.state.timerDetail === undefined) {
+		if ($page.state.timerPreset === undefined) {
 			titleString = "Timer";
 			linkDetail = defaultLinkDetail;
 		}
 	});
 
 	let _timerSessions = liveQuery(() => {
-		return db.sessions.toArray();
+		return db!.sessions.toArray();
 	});
 
 	let timerSessions = $derived(
 		R.sortBy(($_timerSessions || []).map((x) => parseEvents(x.last_tick, x.events)), x => x.startAt).reverse(),
 	);
 
-	let selectedOption: TimerOptionDetail | null = $state(null);
+	let selectedOption: TimerPreset | null = $state(null);
 	onMount(() => {
 		// @ts-ignore
-		window.set_dev = () => {
-			OPTIONS[1].duration = 1;
+		window.set_seek = () => {
+		
 		};
 	});
 </script>
 
 <svelte:head>
-	<link rel="icon" href={linkDetail.url} type={linkDetail.type} size="any" />
+	<link rel="icon" href={linkDetail.url} type={linkDetail.type} />
 	<title>{titleString}</title>
 </svelte:head>
 
-{#if $page.state.timerDetail === undefined}
+{#if $page.state.timerPreset === undefined}
 	<h1 class="text-4xl text-center text-gray-600">Start the timer</h1>
 	<div class="m-auto mt-10">
 		<TimerOption
-			options={OPTIONS}
+			presets={TIMER_PRESETS}
 			defaultOption={1}
 			onselect={(e) =>
 				pushState("", {
-					timerDetail: JSON.stringify(e),
+					timerPreset: JSON.stringify(e),
 				})}
 		/>
 	</div>
@@ -93,7 +71,7 @@
 	</div>
 {:else}
 	<HourGlass
-		option={JSON.parse($page.state.timerDetail)}
+		preset={JSON.parse($page.state.timerPreset)}
 		updateTitle={(x) => (titleString = x)}
 		updateFavicon={(url, type) => {
 			linkDetail = { url, type };

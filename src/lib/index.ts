@@ -7,8 +7,3 @@ export function assert(value: any, message: string = "assertion error"): asserts
 	}
 }
 
-export interface TimerOptionDetail {
-	duration: number,
-	keyword: string,
-	tagline: string,
-}
