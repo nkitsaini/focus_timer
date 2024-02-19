@@ -1,4 +1,4 @@
+import {DateTime} from 'luxon'
 export function humanizeTimestamp(timestampMs: number) {
-		let date = new Date(timestampMs);
-		return date.toLocaleString();
-	}
+	return DateTime.fromMillis(timestampMs).toLocal().toISO()
+}

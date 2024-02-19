@@ -31,7 +31,7 @@ export type TimelineEvent = UserEvent | {
 	totalPauseDuration: number
 }
 
-interface TimerClockState {
+export interface TimerClockState {
 	startAt: number,
 	timeline: TimelineEvent[]
 

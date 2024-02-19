@@ -17,7 +17,7 @@
     import { SpeedAdjustableClock } from "$lib/clock.svelte";
 	let finishSound: Howl;
 	let faviconCanvasElement: HTMLCanvasElement | null = $state(null);
-	let seek_speed = 20;
+	let seek_speed = 1000;
 	let textareaMessage = $state("");
 	if (!dev) {
 		seek_speed = 1;
