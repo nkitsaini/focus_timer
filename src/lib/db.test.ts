@@ -1,11 +1,12 @@
-import { DatabaseDexie } from "./db";
+import { DatabaseDexie, db } from "./db";
 import * as R from 'remeda'
 import { describe, it, expect } from "vitest";
-import { _ALL_TIMER_PRESETS } from "./timer_presets";
+import { _ALL_TIMER_PRESETS, getPreset } from "./timer_presets";
 
 describe("DatabaseDexie", () => {
-	it("should be defined", () => {
+	it("should be defined", async () => {
 		expect(DatabaseDexie).toBeDefined();
+
 	});
 	it("should be valid migration v1->v2", () => {
 		let monkey_dev = R.find(_ALL_TIMER_PRESETS, x => x.keyword==='monkey-dev')!;

@@ -54,7 +54,4 @@ export class DatabaseDexie extends Dexie {
   }
 }
 
-export const db = browser?
-   new DatabaseDexie():undefined
-
-
+export const db: DatabaseDexie  = new DatabaseDexie();

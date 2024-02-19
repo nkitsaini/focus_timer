@@ -56,33 +56,43 @@ export function parseEvents(now: number, userEvents: UserEvent[]): TimerClockSta
 	assert(userEvents[0].kind === "started")
 	assert(now >= R.last(userEvents)!.timestamp)
 
-	let isPaused = R.last(userEvents)!.kind === 'paused';
 	let pauseDuration = 0;
 	let totalPassedDuration = 0;
-	let lastPausedEvent = null;
+	let lastPausedEvent:UserPauseEvent | null = null;
 	let timerDuration = userEvents[0].timerPreset.duration * 60 * 1000;
 	let timelineEvents: TimelineEvent[] = []
 	let isCompleted = false;
+	function totalPauseDuration(now: number) {
+		let rv =  pauseDuration 
+		if (lastPausedEvent) {
+			rv += now - lastPausedEvent.timestamp
+		}
+		return rv
+	}
 	for (const [idx, event] of userEvents.entries()) {
 		if (event.kind === "started") {
 			timelineEvents.push(event)
-		} else if (event.kind === "paused") {
-			let elapsedTime = event.timestamp - userEvents[idx - 1].timestamp
+			continue;
+		}
+		
+		let elapsedTime = event.timestamp - userEvents[idx - 1].timestamp
+		if (event.kind === "paused") {
 			timelineEvents.push(event)
-			totalPassedDuration += elapsedTime
 			lastPausedEvent = event
 		} else if (event.kind === 'resumed') {
 			assert(lastPausedEvent !== null)
-			let elapsedTime = event.timestamp - userEvents[idx - 1].timestamp
 			timelineEvents.push(event)
 			pauseDuration += event.timestamp - lastPausedEvent.timestamp;
-			totalPassedDuration += elapsedTime
+			lastPausedEvent = null;
 		} else if (event.kind === 'noteAdded') {
-			let elapsedTime = event.timestamp - userEvents[idx - 1].timestamp
 			timelineEvents.push(event)
-			totalPassedDuration += elapsedTime
 		} else {
 			throw new Error("unreachable")
+		}
+		totalPassedDuration += elapsedTime
+		if (lastPausedEvent && !['paused', 'resumed'].includes(event.kind)) {
+			// paused and resumed handle the timing themselves
+			pauseDuration += elapsedTime
 		}
 		if (!isCompleted && totalPassedDuration - pauseDuration >= timerDuration) {
 			isCompleted = true;
@@ -92,7 +102,7 @@ export function parseEvents(now: number, userEvents: UserEvent[]): TimerClockSta
 	}
 	if (now > R.last(userEvents)!.timestamp) {
 		let elapsed = now - R.last(userEvents)!.timestamp
-		if (isPaused) {
+		if (lastPausedEvent !== null) {
 			pauseDuration += elapsed
 		}
 		totalPassedDuration += elapsed
@@ -105,12 +115,11 @@ export function parseEvents(now: number, userEvents: UserEvent[]): TimerClockSta
 	timelineEvents = R.sortBy(timelineEvents, (e) => e.timestamp)
 
 	let effectiveDuration = totalPassedDuration - pauseDuration;
-	assert(!isPaused || lastPausedEvent !== null)
 	return {
 		userEvents: userEvents,
 		startAt: userEvents[0].timestamp,
 		timeline: timelineEvents,
-		isPaused,
+		isPaused: lastPausedEvent !== null,
 		isCompleted,
 		totalPauseDuration: pauseDuration,
 		totalDuration: totalPassedDuration,

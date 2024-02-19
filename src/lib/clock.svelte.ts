@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 
 /** Return UTC ms */
-function get_now(): number {
+export function get_now(): number {
 	return DateTime.now().toMillis()
 }
 

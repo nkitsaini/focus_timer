@@ -11,6 +11,7 @@
 	import { db, type TimerSessionRow } from "$lib/db";
 	import HourGlass from "./HourGlass.svelte";
 	import { onMount } from "svelte";
+    import { insertRandomFakeSessionsForPastMonth } from "$lib/fake_session_creator";
 
 	let titleString = $state("Timer");
 	let defaultLinkDetail = {
@@ -69,6 +70,11 @@
 			</p>
 		{/each}
 	</div>
+	<button onclick={async () => {
+		console.log("Inserting")
+		await insertRandomFakeSessionsForPastMonth()
+		console.log("Done inserting")
+	}} > Insert Fake Session </button>
 {:else}
 	<HourGlass
 		preset={JSON.parse($page.state.timerPreset)}
