@@ -32,6 +32,7 @@
   "dependencies": {
     "dexie": "next",
     "howler": "^2.2.4",
+    "luxon": "^3.4.4",
     "remeda": "^1.40.1"
   }
 }
