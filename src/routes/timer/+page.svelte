@@ -148,14 +148,14 @@
     updateDbDebounced.call(unstate(clock.now), unstate(timer.userEvents));
   });
 
-  let faviconLink = $derived.call(() => {
+  let faviconLink = $derived.by(() => {
     if (canvasURL) {
       return { url: canvasURL, type: "image/png" };
     } else {
       return { url: "/favicon.svg", type: "image/svg+xml" };
     }
   });
-  let titleString = $derived.call(() => {
+  let titleString = $derived.by(() => {
     let pauseString = "";
     if (timer.state.isPaused) {
       pauseString = "- Paused ";
