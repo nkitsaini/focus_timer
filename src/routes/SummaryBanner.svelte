@@ -4,6 +4,7 @@
   import { summaryStore } from "./summaryStore.svelte";
   import * as R from "remeda";
   import { getPoints } from "$lib/timer_presets";
+    import CalendarHeatMap from "./goals/YearCalendarHeatMap.svelte";
 
   const { class: className = "" } = $props<{ class?: string }>();
 
@@ -72,7 +73,7 @@
 </script>
 
 <a
-  href="/history"
+  href="/goals"
   class="w-max p-5 block {className} text-orange-950 px-16 hover:bg-orange-100"
 >
   <h1 class="text-center text-2xl">Score Card</h1>

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import "../app.pcss";
-	import * as R from 'remeda'
 	import {page} from '$app/stores'
 	interface NavItem {
 		name: string,
@@ -8,7 +7,7 @@
 	}
 	const navigation_sections: NavItem[] =  [
 		{name: "Home", routeId: "/"},
-		{name: "History", routeId: "/history"},
+		{name: "Goals", routeId: "/goals"},
 		{name: "Rules", routeId: "/rules"},
 	]
 
