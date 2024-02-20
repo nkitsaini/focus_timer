@@ -2,7 +2,6 @@
     import { assert } from "$lib";
     import HeatMapCell from "./HeatMapCell.svelte";
 
-
   let {orientation="vertical", values, class: className} = $props<{
     orientation?: "horizontal" | "vertical";
     values: (number | null)[];

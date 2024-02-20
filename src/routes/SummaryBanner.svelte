@@ -4,7 +4,7 @@
   import { summaryStore } from "./summaryStore.svelte";
   import * as R from "remeda";
   import { getPoints } from "$lib/timer_presets";
-    import CalendarHeatMap from "./goals/YearCalendarHeatMap.svelte";
+    import WeekCalendarHeatMap from "./goals/WeekCalendarHeatMap.svelte";
 
   const { class: className = "" } = $props<{ class?: string }>();
 
@@ -89,5 +89,6 @@
       <span>Week:</span> <span>{summaries.week.totalPoints}</span>
       <span>Month:</span> <span>{summaries.month.totalPoints}</span>
     </div>
+    <WeekCalendarHeatMap class="mt-4" orientation='horizontal' values={summaries.past_week_by_day.map(x => Math.min(x.totalPoints/8, 1))} />
   {/if}
 </a>

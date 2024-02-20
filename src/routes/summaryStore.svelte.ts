@@ -6,11 +6,11 @@ import * as R from "remeda";
 class SummaryStore {
 	sessions: TimerSessionRow[] | undefined = $state(undefined);
 	constructor() {
-		let month_back = DateTime.now().minus({ months: 1 });
+		let year_back = DateTime.now().minus({ years: 1 });
 		liveQuery(() => {
 			return db.sessions
 				.where("last_tick")
-				.aboveOrEqual(month_back.toMillis())
+				.aboveOrEqual(year_back.toMillis())
 				.toArray();
 		}).subscribe((x) => {
 			if (!R.isNil(x)) {
