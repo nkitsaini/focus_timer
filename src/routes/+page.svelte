@@ -2,7 +2,7 @@
 	import { page } from "$app/stores";
 	import { TIMER_PRESETS } from "$lib/timer_presets";
 	import { goto, pushState } from "$app/navigation";
-	import TimerOption from "./TimerOption.svelte";
+	import TimerPresetSelector from "./TimerPresetSelector.svelte";
 
 	import { dev } from "$app/environment";
 	import HourGlass from "./HourGlass.svelte";
@@ -30,7 +30,7 @@
 
 <SummaryBanner class="m-auto  border rounded mt-10" />
 <div class="m-auto mt-20">
-	<TimerOption
+	<TimerPresetSelector
 		presets={TIMER_PRESETS}
 		defaultOption={1}
 		onselect={(e) =>

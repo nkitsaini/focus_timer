@@ -239,11 +239,11 @@
 
   <div class="flex justify-center items-center mt-4">
     {#if timer.state.isPaused}
-      <button class="border p-4 bg-orange-100" onclick={() => timer.resume()}
+      <button class="border p-4 bg-orange-100 rounded" onclick={() => timer.resume()}
         ><ICONS.Resume class="inline-block mr-2" size={16} />Resume</button
       >
     {:else}
-      <button class="border p-4 bg-orange-100" onclick={() => timer.pause()}
+      <button class="border p-4 bg-orange-100 rounded" onclick={() => timer.pause()}
         ><ICONS.Pause class="inline-block mr-2" size={16} />Pause</button
       >
     {/if}
@@ -255,7 +255,7 @@
     <!-- Notes -->
     <div class="flex flex-row items-center gap-2">
       <textarea
-        class="border w-96 bg-orange-50"
+        class="border w-96 bg-orange-50 p-2 rounded"
         placeholder="Type and Press `Ctrl+Enter` to Add Note"
         bind:value={textareaMessage}
         use:shortcut={{
@@ -265,10 +265,10 @@
         }}
       />
       <button
-        class="border px-4 py-2 bg-orange-100 w-max"
+        class="border px-4 py-2 bg-orange-100 w-max rounded"
         onclick={handleTextAreaKeyPress}
       >
-        <ICONS.Pencil2 class="inline-block mr-2" size={16} />Add
+        <ICONS.Pencil2 class="inline-block mr-2 rounded" size={16} />Add
       </button>
     </div>
     <br />

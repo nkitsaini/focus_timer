@@ -49,7 +49,7 @@
     );
     let past_week_by_day: TimerClockState[][] = [];
     for (let i = 0; i < 7; i++) {
-      let day = now.minus({ days: i });
+      let day = now.minus({ days: 7 - 1 - i });
       let sessions_ = sessions.filter((x) =>
         day.hasSame(DateTime.fromMillis(x.startAt), "day"),
       );

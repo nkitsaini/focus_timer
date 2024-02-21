@@ -27,7 +27,7 @@
 	<div class="flex w-max gap-4 m-auto">
 		{#each presets as option, idx}
 			<button
-				class="border p-4 inline-flex text-orange-950 items-center flex-col w-32 hover:border-gray-400 {idx ==
+				class="rounded border p-4 inline-flex text-orange-950 items-center flex-col w-32 hover:border-gray-400 {idx ==
 				selectedIndex
 					? 'bg-orange-100'
 					: ''}"
@@ -47,6 +47,6 @@
 		onclick={() => {
 			onselect(selectedOption);
 		}}
-		class="border w-max text-2xl px-4 py-2 rounded bg-orange-200">Start</button
+		class="rounded border w-max text-2xl px-4 py-2 rounded bg-orange-200">Start</button
 	>
 </div>
