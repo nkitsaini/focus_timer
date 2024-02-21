@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { dev } from "$app/environment";
+  import { dev, browser } from "$app/environment";
   import { getPreset, type TimerPreset } from "$lib/timer_presets";
   import { humanizeTimestamp } from "$lib/time_util";
   import { db } from "$lib/db";
   import { shortcut } from "$lib/shortcut";
-  import { onMount, unstate } from "svelte";
+  import { onMount, onDestroy, unstate } from "svelte";
   import { Howl } from "howler";
   import * as ICONS from "radix-icons-svelte";
   import * as R from "remeda";
@@ -166,8 +166,37 @@
   });
 
   $effect(() => {
-    updateFaviconURLDebounced.call(faviconSVGContent);
+    if (faviconCanvasElement) {
+      updateFaviconURLDebounced.call(faviconSVGContent);
+    }
   });
+
+
+  let shouldWarnBeforeUnload = $derived(!timer.state.isCompleted || !timer.state.isPaused);
+
+  function beforeUnloadHandler(event) {
+    if (shouldWarnBeforeUnload) {
+      event.preventDefault();
+      event.returnValue = true;
+    }
+  }
+  $effect(() => {
+    if (!browser) {
+      return
+    }
+    if (shouldWarnBeforeUnload) {
+      window.addEventListener("beforeunload", beforeUnloadHandler)
+    } else {
+      window.removeEventListener("beforeunload", beforeUnloadHandler)
+    }
+  });
+
+  onDestroy(() => {
+    if (browser) {
+      window.removeEventListener("beforeunload", beforeUnloadHandler)
+    }
+  });
+
   function handleTextAreaKeyPress() {
     let message = textareaMessage.trim();
     if (message.length !== 0) {
