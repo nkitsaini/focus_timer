@@ -140,7 +140,7 @@ export function splitTimestamp(ts: number) {
 
 export class TimerClock {
 	clock: Clock = $state(SIMPLE_CLOCK)
-	userEvents: UserEvent[] = $state([{kind: 'started', timestamp: this.clock.now - 1000, timerPreset: getPreset('monkey-dev')}])
+	userEvents: UserEvent[] = $state([])
 	state: TimerClockState = $derived(parseEvents(this.clock.now, this.userEvents))
 	constructor(timerPreset:TimerPreset, clock?: Clock) {
 		clock = clock || SIMPLE_CLOCK

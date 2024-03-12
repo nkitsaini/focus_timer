@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { dev } from "$app/environment";
 
 /** Return UTC ms */
 export function get_now(): number {
@@ -15,7 +16,7 @@ class _Ticker {
   now = $state(get_now())
 
   constructor() {
-		setInterval(() => this.now = get_now(), 50)
+		setInterval(() => this.now = get_now(), dev?50:200)
   }
 }
 
